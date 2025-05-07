@@ -1,0 +1,17 @@
+function [dV, dI, dR] = Hioki(V, I, R, ac)
+    resV = 1
+    if V < 400
+        resV = 0.1
+    end
+    if V < 40
+        resV = 10 / 1000
+    end
+    if V < 4
+        resV = 1 / 1000
+    end
+    if V < 0.4
+        resV = 0.1 / 1000
+ 
+    end
+end
+
