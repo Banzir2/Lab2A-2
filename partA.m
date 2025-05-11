@@ -27,28 +27,20 @@ dI = Beckman(I, 0);
 negI = [-103.8, -57.5, -39.6, -30.3, -24.5, -20.5, -17.7, -15.6, -13.9, -12.5] / 1000;
 negdI = Beckman(-negI, 0);
 
+Vx = horzcat(Vx, -negVx);
+I = horzcat(I, -negI);
+dVx = horzcat(dVx, negdVx);
+dI = horzcat(dI, negdI);
+
 figure; hold on;
-[f, R, O] = fit(I.', Vx.', 'poly1');
+[f, R, O] = fit(I.', Vx.', 'a*x', 'Weights', 1 ./ (dVx.^2 + dI.^2));
 diff = Vx - f(I).';
-xhisquare = sum((diff.^2) ./ (dI.^2 + dVx.^2)) / 22;
+xhisquare = sum((diff.^2) ./ (dI.^2 + dVx.^2)) / 32;
 errorbar(I, Vx, 2 * dVx, 2 * dVx, 2 * dI, 2 * dI, '.', 'MarkerSize', 20);
 plot(f);
 legend('Data', 'Fit', 'FontSize', 16);
 xlabel('Current [amps]', 'FontSize', 16);
 ylabel('Voltage [volt]', 'FontSize', 16);
 title('Rx voltage by Current', 'FontSize', 16);
-ax = gca;
-ax.FontSize = 14;
-
-figure; hold on;
-[f, R, O] = fit(negI.', negVx.', 'poly1');
-diff = negVx - f(negI).';
-negXhisquare = sum((diff.^2) ./ (negdI.^2 + negdVx.^2)) / 8;
-errorbar(negI, negVx, 2 * negdVx, 2 * negdVx, 2 * negdI, 2 * negdI, '.', 'MarkerSize', 20);
-plot(f);
-legend('Data', 'Fit', 'FontSize', 16);
-xlabel('Current [amps]', 'FontSize', 16);
-ylabel('Voltage [volt]', 'FontSize', 16);
-title('Rx voltage by Current [Negated Voltage]', 'FontSize', 16);
 ax = gca;
 ax.FontSize = 14;
