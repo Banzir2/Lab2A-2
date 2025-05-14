@@ -59,14 +59,16 @@ grid on;
 % Plot2
 diffV=Vb-V;
 figure;
-[f, X, O] = fit(I.', diffV.', 'poly1');
+[f, X, O] = fit(I.', diffV.', 'p1*x');
 diff = diffV - f(I).';
-negXhisquare = sum((diff.^2) ./ ((dI.*R).^2 + (dV+Vb_error).^2)) / 18;
+negXhisquare = sum((diff.^2) ./ ((dI.*R).^2 + (dV+Vb_error).^2)) / 19;
 p1 = f.p1;  % Slope
-p2 = f.p2;  % Intercept
-ci = confint(f);           % 2x2 matrix: [lower; upper]
+%p2 = f.p2;  % Intercept
+%ci = confint(f);           % 2x2 matrix: [lower; upper]
+%p1_error = (ci(2,1) - ci(1,1)) / 2;
+%p2_error = (ci(2,2) - ci(1,2)) / 2;
+ci = confint(f);                % 2x1 matrix: [lower; upper]
 p1_error = (ci(2,1) - ci(1,1)) / 2;
-p2_error = (ci(2,2) - ci(1,2)) / 2;
 plot(f);
 hold on;
 errorbar(I, diffV,dV+Vb_error,dV+Vb_error,dI,dI ,'bo', 'LineWidth', 1.5, 'DisplayName', 'Measured V','MarkerSize',5);
