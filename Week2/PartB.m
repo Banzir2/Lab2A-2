@@ -7,7 +7,6 @@ freq1k = [1.143*1e3, 111.15, 120.7*1e3, 128.4, 157.2, 200.4,...
     22.77, 239.9, 25.11*1e3, 44.70, 5.052*1e3, 68.03, 89.61];
 freq100k = [1.309*1e3, 107.3, 120.2*1e3, 131.4, 165.3, 191.6,...
     223.2, 24.33*1e3, 244.9, 37.16, 5.340*1e3, 59.31, 79.11];
-freq_lpf=[2.290,10.47,43.92,106.8,267.4,733.7,1.430*1e3,5.123*1e3,15.85*1e3, 54.35*1e3,106.4*1e3, 191.3*1e3,230.0*1e3];
 
 file_names = ["1.1k-1k", "1.3k-100k", "107-100k", "111-1k", "120k-100k", "121k-1k", "128-1k", "131-100k", ...
                       "157-1k", "165-100k", "191-100k", "200-1k", "22-1k", "223-100k", "239-1k", "24.3k-100k", ...
@@ -84,7 +83,7 @@ for i = 1:size(file_names, 2)
     err_phase(i) = std_errors_1(2) + std_errors_2(2);
 end
 
-clear alpha beta C_33n cov_matrix delta dx Fs gamma i jacobian k L lb model N P paramsFitted1 paramsFitted2 refinedFreq reifnedIndex residual std_errors_1 std_errors_2 ub var_res w xdata Y y_detrended y_windowed ydata B0 data1 data2
+clear alpha beta cov_matrix delta dx Fs gamma i jacobian k L lb model N P paramsFitted1 paramsFitted2 refinedFreq reifnedIndex residual std_errors_1 std_errors_2 ub var_res w xdata Y y_detrended y_windowed ydata B0 data1 data2
 
 amp_diff_1k = ampl_diff(indexes1k);
 amp_diff_100k = ampl_diff(indexes100k);
@@ -103,14 +102,14 @@ f = fit(freq1k.', amp_diff_1k.', '(x / sqrt(x^2 + a)) + b');
 diff2 = (amp_diff_1k - f(freq1k).').^2;
 xhisquare(1) = sum(diff2 ./ (err_amp_1k.^2)) / 10;
 xlabel('Log(Frequency)', 'FontSize', 16);
-ylabel('Amplitude diff [volt]', 'FontSize', 16);
-title('Amplitude diff by input frequency 1K\Omega', 'FontSize', 16);
+ylabel('Amplitude ratio', 'FontSize', 16);
+title('Amplitude ratio by input frequency 1K\Omega', 'FontSize', 16);
 ax = gca;
 ax.FontSize = 14;
 
 figure; hold on; % Phase diff 1k ohm
 errorbar(log(freq1k), phase_diff_1k, err_phase_1k * 30, '.', 'MarkerSize', 25);
-f = fit(freq1k.', phase_diff_1k.', 'atan(a/(x+b)) + c');
+f = fit(freq1k.', phase_diff_1k.', 'atan(a/x)');
 diff2 = (phase_diff_1k - f(freq1k).').^2;
 xhisquare(2) = sum(diff2 ./ (err_phase_1k.^2 + (pi*freq1k*1e-4).^2)) / 10;
 xlabel('Log(Frequency)', 'FontSize', 16);
@@ -121,18 +120,18 @@ ax.FontSize = 14;
 
 figure; hold on; % Amp diff 100k ohm
 errorbar(log(freq100k), amp_diff_100k, err_amp_100k, '.', 'MarkerSize', 25);
-f = fit(freq100k.', amp_diff_100k.', '((x + a) / sqrt(x^2 + b)) + c');
+f = fit(freq100k.', amp_diff_100k.', 'x / sqrt(x^2 + a^2)');
 diff2 = (amp_diff_100k - f(freq100k).').^2;
 xhisquare(3) = sum(diff2 ./ (err_amp_100k.^2 )) / 10;
 xlabel('Log(Frequency)', 'FontSize', 16);
-ylabel('Amplitude diff [volt]', 'FontSize', 16);
-title('Amplitude diff by input frequency 100K\Omega', 'FontSize', 16);
+ylabel('Amplitude ratio', 'FontSize', 16);
+title('Amplitude ratio by input frequency 100K\Omega', 'FontSize', 16);
 ax = gca;
 ax.FontSize = 14;
 
 figure; hold on; % Phase diff 100k ohm
 errorbar(log(freq100k), phase_diff_100k, err_phase_100k * 30, '.', 'MarkerSize', 25);
-f = fit(freq100k.', phase_diff_100k.', 'atan(a/(x+b)) + c');
+f = fit(freq100k.', phase_diff_100k.', 'atan(a/x) + b');
 diff2 = (phase_diff_100k - f(freq100k).').^2;
 xhisquare(4) = sum(diff2 ./ (err_phase_100k.^2 + (pi*freq1k*1e-4).^2)) / 10;
 xlabel('Log(Frequency)', 'FontSize', 16);
