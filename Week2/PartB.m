@@ -23,47 +23,13 @@ for i = 1:size(file_names, 2)
     data1 = readmatrix(strcat('PartB/', file_names(i), '/meas1.csv'));
     data2 = readmatrix(strcat('PartB/', file_names(i), '/meas2.csv'));
 
-    % Extract your variables
-    xdata = data1(:, 1);
-    ydata = data1(:, 2);
-
-    % Ensure xdata is evenly spaced
-    dx = mean(diff(xdata));
-    Fs = 1 / dx;  % Sampling frequency
-
-    % Optional: detrend to remove DC/linear drift
-    y_detrended = detrend(ydata);
-
-    % Apply a window to reduce spectral leakage
-    w = hann(length(y_detrended));
-    y_windowed = y_detrended .* w;
-
-    % Zero-padding for higher resolution
-    N = 4 * length(y_windowed);  % 4x zero padding
-    Y = fft(y_windowed, N);
-    P = abs(Y(1:N/2+1));         % One-sided amplitude spectrum
-    f = Fs * (0:(N/2)) / N;      % Frequency vector
-
-    % Parabolic interpolation around the FFT peak
-    [~, k] = max(P(2:end));  % ignore DC component
-    k = k + 1;
-
-    if k > 1 && k < length(P)
-        alpha = P(k - 1);
-        beta  = P(k);
-        gamma = P(k + 1);
-        delta = 0.5 * (alpha - gamma) / (alpha - 2*beta + gamma);
-        refinedIndex = k + delta;
-    else
-        refinedIndex = k;
-    end
-
-    % Refined frequency estimate
-    refinedFreq = f(1) + (refinedIndex - 1) * (f(2) - f(1));
-    B0 = 2 * pi * refinedFreq;  % Angular frequency for sine model
-    
     % Model function to fit: y = a * exp(b * x)
-    model = @(params, x) params(1) * cos(B0 * x + params(2));
+    if isempty(find(indexes1k == i))
+        freq = freq100k(find(indexes100k == i));
+    else
+        freq = freq1k(find(indexes1k == i));
+    end
+    model = @(params, x) params(1) * cos(2*pi*freq * x + params(2));
 
     lb = [0.3, -pi];
     ub = [0.5, pi];
