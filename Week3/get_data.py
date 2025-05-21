@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 
 if __name__ == '__main__':
-    for directory in ['470ohm', '470ohm-b', '470ohm-b']:
+    for directory in ['470ohm', '470ohm-b', '470ohm-c']:
         for file in os.listdir(directory):
             if os.path.isdir(directory + '/' + file):
                 continue
