@@ -1,4 +1,4 @@
-freq_420=[35.11, 37.37, 39.25, 43.18, 46.38, 33.16, 31.29, 28.03, 24.34, 20.18, 83.19, 168.4, 10.86, 5.215]*1e3;
+close all; clear;
 
 freq_10=[32.98, 36.5, 30.05];
 Amplitude_10ohm=[18.6,6.24,6.24];
@@ -16,6 +16,9 @@ freq_220=[33.07,38.45, 27.74];
 Amplitude_otot10kohm=[1.18,1.28, 1.29];
 Amplitude_10kohm=[11.6, 3.8,3.84];
 
+freq_420=[35.11, 37.37, 39.25, 43.18, 46.38, 33.16, 31.29, 28.03, 24.34, 20.18, 83.19, 168.4, 10.86, 5.215]*1e3;
+
+file_names = ["35k", "37k", "39k", "43k", "46k", "33k", "31k", "28k", "24k", "20k", "83k", "168k", "10k", "5k"];
 
 ampl_diff = zeros(size(file_names));
 phase_diff = zeros(size(file_names));
@@ -26,15 +29,11 @@ for i = 1:size(file_names, 2)
     data2 = readmatrix(strcat('470ohm/', file_names(i), '/meas2.csv'));
 
     % Model function to fit: y = a * exp(b * x)
-    if isempty(find(indexes1k == i))
-        freq = freq100k(find(indexes100k == i));
-    else
-        freq = freq1k(find(indexes1k == i));
-    end
+    freq = freq_420(i);
     model = @(params, x) params(1) * cos(2*pi*freq * x + params(2));
 
-    lb = [0.3, -pi];
-    ub = [0.5, pi];
+    lb = [0, -pi];
+    ub = [25, pi];
 
     [paramsFitted1, ~, residual, ~, ~, ~, jacobian] = lsqcurvefit(model, [0.4, 0], data1(:, 1), data1(:, 2), lb, ub);
     var_res = sum(residual.^2) / (length(residual) - length(paramsFitted1));
@@ -52,3 +51,42 @@ for i = 1:size(file_names, 2)
 end
 
 clear alpha beta cov_matrix delta dx Fs gamma i jacobian k L lb model N P paramsFitted1 paramsFitted2 refinedFreq reifnedIndex residual std_errors_1 std_errors_2 ub var_res w xdata Y y_detrended y_windowed ydata B0 data1 data2
+
+function r = weighted_residuals(model, x, xdata, ydata, weights)
+    r = weights .* (model(x, xdata) - ydata);
+end
+
+xhisquare = zeros(1, 2);
+
+figure; hold on; % Amp diff
+errorbar(freq_420, ampl_diff, err_amp * 2, '.', 'MarkerSize', 25);
+
+modelFun = @(params, x) 1 ./ (sqrt((1 - (x.^2)*params(1)).^2 + (x*params(2)).^2));
+fun = @(params, x) weighted_residuals(modelFun, params, freq_420, ampl_diff, 1 ./ sqrt(err_amp.^2 + (pi*freq_420*1e-6).^2));
+startPoint = [961e-12, 21.06e-3];
+xData = 2*pi*freq_420(:);     % Ensure column vector
+yData = ampl_diff(:);
+lb = [0, 0];
+ub = [Inf, Inf];
+options = optimoptions('lsqcurvefit', 'TolFun', 1e-8, 'TolX', 1e-8);
+params_fit = lsqcurvefit(modelFun, startPoint, freq_420, zeros(size(ampl_diff)), lb, ub, options);
+
+scatter(freq_420, modelFun(params_fit, 2*pi*freq_420));
+diff2 = (ampl_diff - modelFun(params_fit, 2*pi*freq_420)).^2;
+xhisquare(1) = sum(diff2 ./ (err_amp.^2 + (pi*freq_420*1e-6).^2)) / 10;
+xlabel('Frequency [Hz]', 'FontSize', 16);
+ylabel('Amplitude ratio', 'FontSize', 16);
+title('Amplitude ratio by input frequency 1K\Omega', 'FontSize', 16);
+ax = gca;
+ax.FontSize = 14;
+
+figure; hold on; % Phase diff
+errorbar(freq_420, phase_diff, err_phase * 30, '.', 'MarkerSize', 25);
+f = fit(freq_420.', phase_diff.', 'atan(a/x)');
+diff2 = (phase_diff - f(freq_420).').^2;
+xhisquare(2) = sum(diff2 ./ (err_phase.^2 + (pi*freq_420*1e-4).^2)) / 10;
+xlabel('Frequency [Hz]', 'FontSize', 16);
+ylabel('Phase diff [rad]', 'FontSize', 16);
+title('Phase diff by input frequency 1K\Omega', 'FontSize', 16);
+ax = gca;
+ax.FontSize = 14;
