@@ -1,29 +1,12 @@
-freq_420=[35.11, 37.37, 39.25, 43.18, 46.38, 33.16, 31.29, 28.03, 24.34, 20.18, 83.19, 168.4, 10.86, 5.215]*1e3;
-
-freq_10=[32.98, 36.5, 30.05];
-Amplitude_10ohm=[18.6,6.24,6.24];
-Amplitude_otot10ohm=[1.1, 1.26, 1.28];
-
-freq_100=[32.97,37.23,29.08];
-Amplitude_otot100ohm=[1.14,1.26, 1.29 ];
-Amplitude_100ohm=[14.8, 5.04, 4.88];
-
-freq_1k=[33.2,44.49, 13.93];
-Amplitude_otot1kohm=[1.26,1.3, 1.3];
-Amplitude_1kohm=[4.56, 1.52,1.52];
-
-freq_220=[33.07,38.45, 27.74];
-Amplitude_otot10kohm=[1.18,1.28, 1.29];
-Amplitude_10kohm=[11.6, 3.8,3.84];
-
+freq_H=[33.8,36.39, 38.58, 41.25, 45.17, 31.13, 29.38, 27.29, 23.19, 105.7, 10.15]*1e3;
 
 ampl_diff = zeros(size(file_names));
 phase_diff = zeros(size(file_names));
 err_amp = zeros(size(file_names));
 err_phase = zeros(size(file_names));
 for i = 1:size(file_names, 2)
-    data1 = readmatrix(strcat('470ohm/', file_names(i), '/meas1.csv'));
-    data2 = readmatrix(strcat('470ohm/', file_names(i), '/meas2.csv'));
+    data1 = readmatrix(strcat('470ohm-c/', file_names(i), '/meas1.csv'));
+    data2 = readmatrix(strcat('470ohm-c/', file_names(i), '/meas2.csv'));
 
     % Model function to fit: y = a * exp(b * x)
     if isempty(find(indexes1k == i))
