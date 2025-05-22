@@ -59,34 +59,34 @@ end
 xhisquare = zeros(1, 2);
 
 figure; hold on; % Amp diff
-errorbar(freq_420, ampl_diff, err_amp * 2, '.', 'MarkerSize', 25);
+errorbar(freq_420, ampl_diff, err_amp, '.', 'MarkerSize', 25);
 
-modelFun = @(params, x) 1 ./ (sqrt((1 - (x.^2)*params(1)).^2 + (x*params(2)).^2));
-fun = @(params, x) weighted_residuals(modelFun, params, freq_420, ampl_diff, 1 ./ sqrt(err_amp.^2 + (pi*freq_420*1e-6).^2));
-startPoint = [961e-12, 21.06e-3];
+modelFun = @(params, x) 1 ./ (sqrt(params(1)*(x.^2) + (params(2)*(x.^2) - 1).^2));
+startPoint = [(740*1e-9)^2, (23e-3 * 1e-9)];
 xData = 2*pi*freq_420(:);     % Ensure column vector
 yData = ampl_diff(:);
 lb = [0, 0];
 ub = [Inf, Inf];
-options = optimoptions('lsqcurvefit', 'TolFun', 1e-8, 'TolX', 1e-8);
-params_fit = lsqcurvefit(modelFun, startPoint, freq_420, zeros(size(ampl_diff)), lb, ub, options);
+options = optimoptions('lsqcurvefit', 'TolFun', 1e-8);
+params_fit = lsqcurvefit(modelFun, startPoint, xData, yData, lb, ub, options);
 
 scatter(freq_420, modelFun(params_fit, 2*pi*freq_420));
 diff2 = (ampl_diff - modelFun(params_fit, 2*pi*freq_420)).^2;
-xhisquare(1) = sum(diff2 ./ (err_amp.^2 + (pi*freq_420*1e-6).^2)) / 10;
+xhisquare(1) = sum(diff2 ./ (err_amp.^2 + (pi*freq_420*1e-6).^2)) / 12;
 xlabel('Frequency [Hz]', 'FontSize', 16);
 ylabel('Amplitude ratio', 'FontSize', 16);
-title('Amplitude ratio by input frequency 1K\Omega', 'FontSize', 16);
+title('Amplitude ratio by input frequency', 'FontSize', 16);
 ax = gca;
 ax.FontSize = 14;
 
 figure; hold on; % Phase diff
-errorbar(freq_420, phase_diff, err_phase * 30, '.', 'MarkerSize', 25);
-f = fit(freq_420.', phase_diff.', 'atan(a/x)');
-diff2 = (phase_diff - f(freq_420).').^2;
-xhisquare(2) = sum(diff2 ./ (err_phase.^2 + (pi*freq_420*1e-4).^2)) / 10;
+errorbar(freq_420, phase_diff - pi/2, err_phase * 30, '.', 'MarkerSize', 25);
+f = fit(freq_420.', phase_diff.' - pi/2, 'atan(a*x+b/x)', 'StartPoint', [25e-3 / 740, -1/(740*1e-9)]);
+scatter(freq_420, f(freq_420))
+diff2 = (phase_diff - f(freq_420).' - pi/2).^2;
+xhisquare(2) = sum(diff2 ./ (err_phase.^2 + (pi*freq_420*1e-6).^2)) / 10;
 xlabel('Frequency [Hz]', 'FontSize', 16);
 ylabel('Phase diff [rad]', 'FontSize', 16);
-title('Phase diff by input frequency 1K\Omega', 'FontSize', 16);
+title('Phase diff by input frequency', 'FontSize', 16);
 ax = gca;
 ax.FontSize = 14;
