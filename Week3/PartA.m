@@ -57,12 +57,14 @@ function r = weighted_residuals(model, x, xdata, ydata, weights)
 end
 
 xhisquare = zeros(1, 2);
+C = 1.0571e-09;
+H = 21.06e-3;
 
 figure; hold on; % Amp diff
 errorbar(freq_420, ampl_diff, err_amp, '.', 'MarkerSize', 25);
 
 modelFun = @(params, x) 1 ./ (sqrt(params(1)*(x.^2) + (params(2)*(x.^2) - 1).^2));
-startPoint = [(740*1e-9)^2, (23e-3 * 1e-9)];
+startPoint = [(680*C)^2, (H*C)];
 xData = 2*pi*freq_420(:);     % Ensure column vector
 yData = ampl_diff(:);
 lb = [0, 0];
