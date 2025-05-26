@@ -1,26 +1,27 @@
 close all; clear;
 
-freq_10=[32.98, 36.5, 30.05];
+freq_10=[32.98, 36.5, 30.05]*1e3;
 Amplitude_10ohm=[18.6,6.24,6.24];
 Amplitude_otot10ohm=[1.1, 1.26, 1.28];
 
-freq_100=[32.97,37.23,29.08];
+freq_100=[32.97,37.23,29.08]*1e3;
 Amplitude_otot100ohm=[1.14,1.26, 1.29 ];
 Amplitude_100ohm=[14.8, 5.04, 4.88];
 
-freq_1k=[33.2,44.49, 13.93];
+freq_1k=[33.2,44.49, 13.93]*1e3;
 Amplitude_otot1kohm=[1.26,1.3, 1.3];
 Amplitude_1kohm=[4.56, 1.52,1.52];
 
-freq_220=[33.07,38.45, 27.74];
-Amplitude_otot10kohm=[1.18,1.28, 1.29];
-Amplitude_10kohm=[11.6, 3.8,3.84];
+freq_220=[33.07,38.45, 27.74]*1e3;
+Amplitude_otot220ohm=[1.18,1.28, 1.29];
+Amplitude_220ohm=[11.6, 3.8,3.84];
 
 freq_420=[35.11, 37.37, 39.25, 43.18, 46.38, 33.16, 31.29, 28.03, 24.34, 20.18, 83.19, 168.4, 10.86, 5.215]*1e3;
 
 file_names = ["35k", "37k", "39k", "43k", "46k", "33k", "31k", "28k", "24k", "20k", "83k", "168k", "10k", "5k"];
 
 ampl_diff = zeros(size(file_names));
+C_amp = zeros(size(file_names));
 phase_diff = zeros(size(file_names));
 err_amp = zeros(size(file_names));
 err_phase = zeros(size(file_names));
@@ -44,6 +45,7 @@ for i = 1:size(file_names, 2)
     cov_matrix = var_res * inv(jacobian' * jacobian);
     std_errors_2 = full(sqrt(diag(cov_matrix)));
 
+    C_amp(i) = abs(paramsFitted2(1));
     ampl_diff(i) = abs(paramsFitted2(1) / paramsFitted1(1));
     phase_diff(i) = mod(paramsFitted1(2) - paramsFitted2(2), pi);
     err_amp(i) = scope_err(data1(1, 3)) + scope_err(data2(1, 3));
@@ -95,7 +97,6 @@ ax.FontSize = 14;
 thirdmax = max(modelFun(params_fit, freq_space)) / 3;
 fun = @(x) modelFun(params_fit, x) - thirdmax;
 x = fzero(fun, 6e4);
-width = 4.004209208122798e+04 - 2.492878536140029e+04;
 
 figure; hold on; % Phase diff
 errorbar(freq_420, -(phase_diff - pi/2), err_phase * 30, '.', 'MarkerSize', 25);
@@ -120,3 +121,17 @@ ylabel('Phase diff [rad]', 'FontSize', 16);
 title('Phase diff by input frequency', 'FontSize', 16);
 ax = gca;
 ax.FontSize = 14;
+
+figure; hold on;
+R = [10, 100, 220, 420, 1000];
+widths = [freq_10(2) - freq_10(3), freq_100(2) - freq_100(3), ...
+    freq_220(2) - freq_220(3), 1.511330671982769e+04, freq_1k(2) - freq_1k(3)];
+scatter(R, widths, '.', 'SizeData', 600);
+f = fit(R.', widths.', 'poly1');
+plot(f);
+
+figure; hold on;
+amps = [Amplitude_10ohm(1) / Amplitude_otot10ohm(1), Amplitude_100ohm(1) / Amplitude_otot100ohm(1), Amplitude_220ohm(1) / Amplitude_otot220ohm(1), max(ampl_diff), Amplitude_1kohm(1) / Amplitude_otot1kohm(1)];
+scatter(R, amps, '.', 'SizeData', 600);
+f = fit(R.', amps.', 'a/(x+220)', 'StartPoint', sqrt(H / C));
+plot(f);
