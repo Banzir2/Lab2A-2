@@ -80,15 +80,22 @@ std_errors = full(sqrt(diag(cov_matrix)));
 freq_space = linspace(0, max(freq_420)*1.01, 10000);
 
 plot(freq_space, modelFun(params_fit, freq_space), 'LineWidth', 1.5);
-text(0.7 * max(freq_space), max(ampl_diff), compose("f_c = %.1f \\pm %.1f", params_fit(1), std_errors(1)), 'FontSize', 16);
-text(0.7 * max(freq_space), max(ampl_diff) - 0.4, compose("f_l = %.1f \\pm %.1f", params_fit(2), std_errors(2)), 'FontSize', 16);
+text(0.7 * max(freq_space), max(ampl_diff), compose("f_c = %.1f \\pm %.1f", params_fit(1), std_errors(1)), 'FontSize', 16, 'FontName', 'Times New Roman');
+text(0.7 * max(freq_space), max(ampl_diff) - 0.4, compose("f_l = %.1f \\pm %.1f", params_fit(2), std_errors(2)), 'FontSize', 16, 'FontName', 'Times New Roman');
 diff2 = (ampl_diff - modelFun(params_fit, freq_420)).^2;
 xhisquare(1) = sum(diff2 ./ (err_amp.^2)) / 12;
 xlabel('Frequency [Hz]', 'FontSize', 16);
 ylabel('Amplitude ratio', 'FontSize', 16);
 title('Amplitude ratio by input frequency', 'FontSize', 16);
+xline(4.004209208122798e+04, 'LineWidth', 2, 'LineStyle', '--');
+xline(2.492878536140029e+04, 'LineWidth', 2, 'LineStyle', '--');
 ax = gca;
 ax.FontSize = 14;
+
+thirdmax = max(modelFun(params_fit, freq_space)) / 3;
+fun = @(x) modelFun(params_fit, x) - thirdmax;
+x = fzero(fun, 6e4);
+width = 4.004209208122798e+04 - 2.492878536140029e+04;
 
 figure; hold on; % Phase diff
 errorbar(freq_420, -(phase_diff - pi/2), err_phase * 30, '.', 'MarkerSize', 25);
@@ -103,11 +110,11 @@ options = optimoptions('lsqcurvefit', 'TolFun', 1e-8);
 var_res = sum(residual.^2) / (length(residual) - length(params_fit));
 cov_matrix = var_res * inv(jacobian' * jacobian);
 std_errors = full(sqrt(diag(cov_matrix)));
-text(0.7 * max(freq_space), 0.5*max(phase_diff), compose("f_c = %.1f \\pm %.1f", params_fit(1), std_errors(1)), 'FontSize', 16);
-text(0.7 * max(freq_space), 0.5*max(phase_diff) - 0.25, compose("f_l = %.1f \\pm %.1f", params_fit(2), std_errors(2)), 'FontSize', 16);
+text(0.7 * max(freq_space), 0.5*max(phase_diff), compose("f_c = %.1f \\pm %.1f", params_fit(1), std_errors(1)), 'FontSize', 16, 'FontName', 'Times New Roman');
+text(0.7 * max(freq_space), 0.5*max(phase_diff) - 0.25, compose("f_l = %.1f \\pm %.1f", params_fit(2), std_errors(2)), 'FontSize', 16, 'FontName', 'Times New Roman');
 plot(freq_space, modelFun(params_fit, freq_space), 'LineWidth', 1.5);
 diff2 = (phase_diff + modelFun(params_fit, freq_420) - pi/2).^2;
-xhisquare(2) = sum(diff2 ./ (err_phase.^2 + (pi*freq_420*1e-7).^2)) / 10;
+xhisquare(2) = sum(diff2 ./ (err_phase.^2 + (pi*freq_420*1e-7).^2)) / 12;
 xlabel('Frequency [Hz]', 'FontSize', 16);
 ylabel('Phase diff [rad]', 'FontSize', 16);
 title('Phase diff by input frequency', 'FontSize', 16);
