@@ -33,7 +33,7 @@ for i = 1:size(file_names, 2)
     model = @(params, x) params(1) * cos(2*pi*freq * x + params(2));
 
     lb = [0, -pi];
-    ub = [25, pi];
+    ub = [100, pi];
 
     [paramsFitted1, ~, residual, ~, ~, ~, jacobian] = lsqcurvefit(model, [0.4, 0], data1(:, 1), data1(:, 2), lb, ub);
     var_res = sum(residual.^2) / (length(residual) - length(paramsFitted1));
@@ -52,9 +52,11 @@ end
 
 clear alpha beta cov_matrix delta dx Fs gamma i jacobian k L lb model N P paramsFitted1 paramsFitted2 refinedFreq reifnedIndex residual std_errors_1 std_errors_2 ub var_res w xdata Y y_detrended y_windowed ydata B0 data1 data2
 
-function r = weighted_residuals(model, x, xdata, ydata, weights)
-    r = weights .* (model(x, xdata) - ydata);
-end
+[freq_420, newIdx] = sort(freq_420);       % I gives the old indices in new order
+ampl_diff = ampl_diff(newIdx);
+phase_diff = phase_diff(newIdx);
+err_amp = err_amp(newIdx);
+err_phase = err_phase(newIdx);
 
 xhisquare = zeros(1, 2);
 C = 1.0571e-09;
@@ -63,18 +65,25 @@ H = 21.06e-3;
 figure; hold on; % Amp diff
 errorbar(freq_420, ampl_diff, err_amp, '.', 'MarkerSize', 25);
 
-modelFun = @(params, x) 1 ./ (sqrt(params(1)*(x.^2) + (params(2)*(x.^2) - 1).^2));
-startPoint = [(680*C)^2, (H*C)];
-xData = 2*pi*freq_420(:);     % Ensure column vector
+modelFun = @(params, x) params(1) ./ (sqrt(1 + (x/params(2) - params(1)./x).^2) .* x);
+startPoint = [1 / (2*pi*470*C), 470 / (2*pi*H)];
+xData = freq_420(:);     % Ensure column vector
 yData = ampl_diff(:);
 lb = [0, 0];
 ub = [Inf, Inf];
 options = optimoptions('lsqcurvefit', 'TolFun', 1e-8);
-params_fit = lsqcurvefit(modelFun, startPoint, xData, yData, lb, ub, options);
+[params_fit, ~, residual, ~, ~, ~, jacobian] = lsqcurvefit(modelFun, startPoint, xData, yData, lb, ub, options);
+var_res = sum(residual.^2) / (length(residual) - length(params_fit));
+cov_matrix = var_res * inv(jacobian' * jacobian);
+std_errors = full(sqrt(diag(cov_matrix)));
 
-scatter(freq_420, modelFun(params_fit, 2*pi*freq_420));
-diff2 = (ampl_diff - modelFun(params_fit, 2*pi*freq_420)).^2;
-xhisquare(1) = sum(diff2 ./ (err_amp.^2 + (pi*freq_420*1e-6).^2)) / 12;
+freq_space = linspace(0, max(freq_420)*1.01, 10000);
+
+plot(freq_space, modelFun(params_fit, freq_space), 'LineWidth', 1.5);
+text(0.7 * max(freq_space), max(ampl_diff), compose("f_c = %.1f \\pm %.1f", params_fit(1), std_errors(1)), 'FontSize', 16);
+text(0.7 * max(freq_space), max(ampl_diff) - 0.4, compose("f_l = %.1f \\pm %.1f", params_fit(2), std_errors(2)), 'FontSize', 16);
+diff2 = (ampl_diff - modelFun(params_fit, freq_420)).^2;
+xhisquare(1) = sum(diff2 ./ (err_amp.^2)) / 12;
 xlabel('Frequency [Hz]', 'FontSize', 16);
 ylabel('Amplitude ratio', 'FontSize', 16);
 title('Amplitude ratio by input frequency', 'FontSize', 16);
@@ -82,11 +91,23 @@ ax = gca;
 ax.FontSize = 14;
 
 figure; hold on; % Phase diff
-errorbar(freq_420, phase_diff - pi/2, err_phase * 30, '.', 'MarkerSize', 25);
-f = fit(freq_420.', phase_diff.' - pi/2, 'atan(a*x+b/x)', 'StartPoint', [25e-3 / 740, -1/(740*1e-9)]);
-scatter(freq_420, f(freq_420))
-diff2 = (phase_diff - f(freq_420).' - pi/2).^2;
-xhisquare(2) = sum(diff2 ./ (err_phase.^2 + (pi*freq_420*1e-6).^2)) / 10;
+errorbar(freq_420, -(phase_diff - pi/2), err_phase * 30, '.', 'MarkerSize', 25);
+modelFun = @(params, x) atan((params(1) ./ x) - (x / params(2)));
+startPoint = [1 / (2*pi*470*C), 470 / (2*pi*H)];
+xData = freq_420(:);     % Ensure column vector
+yData = -(phase_diff.' - pi/2);
+lb = [0, 0];
+ub = [Inf, Inf];
+options = optimoptions('lsqcurvefit', 'TolFun', 1e-8);
+[params_fit, ~, residual, ~, ~, ~, jacobian] = lsqcurvefit(modelFun, startPoint, xData, yData, lb, ub, options);
+var_res = sum(residual.^2) / (length(residual) - length(params_fit));
+cov_matrix = var_res * inv(jacobian' * jacobian);
+std_errors = full(sqrt(diag(cov_matrix)));
+text(0.7 * max(freq_space), 0.5*max(phase_diff), compose("f_c = %.1f \\pm %.1f", params_fit(1), std_errors(1)), 'FontSize', 16);
+text(0.7 * max(freq_space), 0.5*max(phase_diff) - 0.25, compose("f_l = %.1f \\pm %.1f", params_fit(2), std_errors(2)), 'FontSize', 16);
+plot(freq_space, modelFun(params_fit, freq_space), 'LineWidth', 1.5);
+diff2 = (phase_diff + modelFun(params_fit, freq_420) - pi/2).^2;
+xhisquare(2) = sum(diff2 ./ (err_phase.^2 + (pi*freq_420*1e-7).^2)) / 10;
 xlabel('Frequency [Hz]', 'FontSize', 16);
 ylabel('Phase diff [rad]', 'FontSize', 16);
 title('Phase diff by input frequency', 'FontSize', 16);
