@@ -100,7 +100,6 @@ set(gca, 'FontSize', 14);
 fprintf('Fitted Parameters:\n');
 fprintf('L/R   = %.3e ± %.1e\n', params_fit(1), param_errors(1));
 fprintf('1/RC  = %.3e ± %.1e\n', params_fit(2), param_errors(2));
-figure; hold on;
 
 
 
@@ -108,7 +107,7 @@ figure; hold on;
 w_R = 2 * pi * freq_H(:);  % Angular frequency vector [rad/s]
 
 % Model: phi(w) = atan(L/R * w - 1/(RC * w))
-modelPhase = @(p, w) atan(p(1) * w - p(2) ./ w);  % p(1) = L/R, p(2) = 1/RC
+modelPhase = @(p, w) atan(-p(1) * w + p(2) ./ w);  % p(1) = L/R, p(2) = 1/RC
 
 % Initial guess based on expected component values
 startPoint = [H / 470, 1 / (470 * C)];  % [L/R, 1/RC]
@@ -118,7 +117,7 @@ lb = [0, 0];
 ub = [Inf, Inf];
 
 % Target data
-yData = phase_diff(:)+pi/2;
+yData = phase_diff(:)*-1-pi/2;
 
 % Perform nonlinear least squares fitting
 [p_fit, resnorm, residuals, exitflag, output, lambda, J] = lsqcurvefit( ...

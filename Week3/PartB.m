@@ -101,7 +101,6 @@ set(gca, 'FontSize', 14);
 fprintf('Fitted Parameters:\n');
 fprintf('L/R   = %.3e ± %.1e\n', params_fit(1), param_errors(1));
 fprintf('1/RC  = %.3e ± %.1e\n', params_fit(2), param_errors(2));
-figure; hold on;
 
 % Remove bad data point(s)
 bad_idx = 2;  % Adjust if needed
@@ -113,7 +112,7 @@ err_phase(bad_idx) = [];
 w_R = 2 * pi * freq_R(:);  % Angular frequency vector [rad/s]
 
 % Model: phi(w) = atan(L/R * w - 1/(RC * w))
-modelPhase = @(p, w) atan(p(1) * w - p(2) ./ w);  % p(1) = L/R, p(2) = 1/RC
+modelPhase = @(p, w) atan(-p(1) * w + p(2) ./ w);  % p(1) = L/R, p(2) = 1/RC
 
 % Initial guess based on expected component values
 startPoint = [25e-3 / 470, 1 / (470 * 1e-9)];  % [L/R, 1/RC]
@@ -123,7 +122,7 @@ lb = [0, 0];
 ub = [Inf, Inf];
 
 % Target data
-yData = phase_diff(:);
+yData = phase_diff(:)*(-1);
 
 % Perform nonlinear least squares fitting
 [p_fit, resnorm, residuals, exitflag, output, lambda, J] = lsqcurvefit( ...
@@ -137,7 +136,7 @@ param_errors = (ci(:,2) - ci(:,1)) / 2;
 N = length(yData);      % number of data points
 k = length(p_fit);      % number of fitted parameters
 y_fit_data = modelPhase(p_fit, w_R);
-chi2_red = sum(((yData - y_fit_data) ./ err_phase(:)).^2) / (N - k);
+chi2_red = sum(((yData - y_fit_data) ./ (10*err_phase(:))).^2) / (N - k);
 
 % Display results
 fprintf('Phase Fit Parameters:\n');
