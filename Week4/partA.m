@@ -9,39 +9,39 @@ C2=202.2e-12;
 L1=121.78e-3;
 L2=98.52e-3;
 
-Z = @(params, f) params(1) + (1i*2*pi*f*params(2)) + 1 ./ (1i*2*pi*f*params(3)) + 1 ./ (1i*2*pi*f*Ctag(1));
+Z1 = @(params, f) params(1) + (1i*2*pi*f*params(2)) + 1 ./ (1i*2*pi*f*params(3)) + 1 ./ (1i*2*pi*f*Ctag(1));
+Z2 = @(params, f) params(1) + (1i*2*pi*f*params(2)) + 1 ./ (1i*2*pi*f*params(3)) + 1 ./ (1i*2*pi*f*Ctag(1));
 Zm = @(f) 1 ./ (1i*2*pi*f*Ctag(1));
-model_R1 = @(params, f) params(1) * abs((params(4)*Z(params(5:7), f)) ./ (Z(params(1:3), f).*Z(params(5:7), f) - Zm(f).^2));
-model_R2 = @(params, f) params(5) * abs((params(4)*Zm(f)) ./ (Z(params(1:3), f).*Z(params(5:7), f) - Zm(f).^2));
+model_R1 = @(params, f) params(1) * abs((params(4)*Z2(params(5:7), f)) ./ (Z1(params(1:3), f).*Z2(params(5:7), f) - Zm(f).^2));
+model_R2 = @(params, f) params(5) * abs((params(4)*Zm(f)) ./ (Z1(params(1:3), f).*Z2(params(5:7), f) - Zm(f).^2));
 
 %1nF
 f=[39.817,41.142, 42.11,44.07, 47.09, 38.98, 37.134, 34.928, 32.07, 33.62, 30.425, 20.00, 56.72, 105.63, 4.931]*1e3;
 V1=[1.22,0.84, 0.612, 0.388, 0.253,1.08, 0.26, 0.508, 0.584, 1.01, 0.354, 0.092, 0.126, 0.0268, 0.0156];
 V2=[0.812,0.448, 0.282, 0.136, 0.06, 0.92, 0.592, 0.82, 0.38, 1.04, 0.176, 0.024, 0.016, 0.068, 0.0038];
 
+f_space = linspace(min(f), max(f), 100000);
+
 [f, newIdx] = sort(f);
 V1 = V1(newIdx);
 V2 = V2(newIdx);
 
 figure; hold on;
-plot(f, V1);
-plot(f, V2);
+% plot(f, V1);
+% plot(f, V2);
 
 startPoint = [R1, L1, C1, 1.3, R2, L2, C2];
 xData = f(:);     % Ensure column vector
 yData = V1(:);
-lb = [0, 0, 0, 0, 0, 0, 0];
-ub = [Inf, Inf, Inf, Inf, Inf, Inf, Inf];
-options = optimoptions('lsqcurvefit', 'StepTolerance', 1e-10, ...
-    'FunctionTolerance', 1e-10, ...
-    'OptimalityTolerance', 1e-10, ...
-    'FiniteDifferenceStepSize', 1e-8);
-[params_fit, ~, residual, ~, ~, ~, jacobian] = lsqcurvefit(model_R1, startPoint, xData, yData, lb, ub, options);
+lb = zeros(size(startPoint));
+ub = ones(size(startPoint)) * Inf;
+[params_fit, ~, residual, ~, ~, ~, jacobian] = lsqcurvefit(model_R1, startPoint, xData, yData, lb, ub);
 var_res = sum(residual.^2) / (length(residual) - length(params_fit));
 cov_matrix = var_res * inv(jacobian' * jacobian);
 std_errors = full(sqrt(diag(cov_matrix)));
 
-plot(f, model_R1(params_fit, f));
+plot(f_space, model_R1(params_fit, f_space));
+plot(xData, yData);
 
 %2.2nF
 f=[33.65,34.63, 36.71, 37.645, 35.62, 34.11, 33.08, 36.00,37.17 , 43.36, 26.88,16.666, 52.998 ]*1e3;
